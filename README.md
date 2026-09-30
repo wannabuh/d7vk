@@ -1,4 +1,9 @@
-﻿# D7VK
+﻿> [!NOTE]
+> **This is an unofficial fork** with performance changes for the Project Rubi-Ka Anarchy Online client.
+> See [AO-INSTALL.md](AO-INSTALL.md) for what changed and how to install it on Linux and Windows.
+> Report problems [here](https://github.com/wannabuh/d7vk/issues), not to upstream D7VK.
+
+# D7VK
 
 A Vulkan-based translation layer for Direct3D 7, 6, 5 and 3, which allows running 3D applications on Linux using Wine. It uses a modified version of DXVK's D3D9 Vulkan backend as well as Wine's DDraw implementation, or the Windows native DDraw implementation, and acts as a proxy between the two.
 
