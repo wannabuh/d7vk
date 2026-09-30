@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "ddraw2_interface.h"
 
 #include "../d3d_common_device.h"
@@ -45,6 +46,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -154,10 +156,12 @@ namespace dxvk {
 
   // The documentation states: "The IDirectDraw2::Compact method is not currently implemented."
   HRESULT STDMETHODCALLTYPE DDraw2Interface::Compact() {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::CreateClipper(DWORD dwFlags, LPDIRECTDRAWCLIPPER *lplpDDClipper, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDDClipper == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -174,6 +178,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::CreatePalette(DWORD dwFlags, LPPALETTEENTRY lpColorTable, LPDIRECTDRAWPALETTE *lplpDDPalette, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDDPalette == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -191,6 +196,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::CreateSurface(LPDDSURFACEDESC lpDDSurfaceDesc, LPDIRECTDRAWSURFACE *lplpDDSurface, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     // The cooperative level is always checked first
     if (unlikely(!m_commonIntf->IsCooperativeLevelSet()))
       return DDERR_NOCOOPERATIVELEVELSET;
@@ -297,6 +303,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::DuplicateSurface(LPDIRECTDRAWSURFACE lpDDSurface, LPDIRECTDRAWSURFACE *lplpDupDDSurface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSurface == nullptr || lplpDupDDSurface == nullptr))
       return DDERR_CANTDUPLICATE;
 
@@ -326,6 +333,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::EnumDisplayModes(DWORD dwFlags, LPDDSURFACEDESC lpDDSurfaceDesc, LPVOID lpContext, LPDDENUMMODESCALLBACK lpEnumModesCallback) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpEnumModesCallback == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -358,6 +366,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::EnumSurfaces(DWORD dwFlags, LPDDSURFACEDESC lpDDSD, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_commonIntf->GetDDInterface() == nullptr)) {
       Logger::err("DDraw2Interface::EnumSurfaces: Found no valid parent interface");
       return DDERR_UNSUPPORTED;
@@ -367,6 +376,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::FlipToGDISurface() {
+    D7VK_DEFERRED_SYNC();
     DDrawCommonSurface* ps = m_commonIntf->GetPrimarySurface();
 
     // A primary surface must exist for a GDI flip to be possible
@@ -380,6 +390,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetCaps(LPDDCAPS lpDDDriverCaps, LPDDCAPS lpDDHELCaps) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDDriverCaps == nullptr && lpDDHELCaps == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -456,6 +467,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetDisplayMode(LPDDSURFACEDESC lpDDSurfaceDesc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSurfaceDesc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -481,6 +493,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetFourCCCodes(LPDWORD lpNumCodes, LPDWORD lpCodes) {
+    D7VK_DEFERRED_SYNC();
     if (likely(lpNumCodes != nullptr && lpCodes != nullptr)) {
       const uint32_t copyNumCodes = std::min<uint32_t>(ddrawCaps::NumberOfFOURCCCodes, *lpNumCodes);
       for (uint32_t i = 0; i < copyNumCodes; i++) {
@@ -495,6 +508,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetGDISurface(LPDIRECTDRAWSURFACE *lplpGDIDDSurface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpGDIDDSurface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -521,14 +535,17 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetMonitorFrequency(LPDWORD lpdwFrequency) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetMonitorFrequency(lpdwFrequency);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetScanLine(LPDWORD lpdwScanLine) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetScanLine(lpdwScanLine);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetVerticalBlankStatus(LPBOOL lpbIsInVB) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetVerticalBlankStatus(lpbIsInVB);
   }
 
@@ -539,6 +556,7 @@ namespace dxvk {
   // On native DDraw the initial interface most likely gets reused. In practice,
   // applications that don't use IClassFactory won't call this, so keep it simple.
   HRESULT STDMETHODCALLTYPE DDraw2Interface::Initialize(GUID* lpGUID) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_commonIntf->IsInitialized()))
       return DDERR_ALREADYINITIALIZED;
 
@@ -548,10 +566,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::RestoreDisplayMode() {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->RestoreDisplayMode();
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::SetCooperativeLevel(HWND hWnd, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     // DDSCL_CREATEDEVICEWINDOW doesn't appear to behave properly in
     // Wine, so use the cached hWnd to set the device window instead
     if (unlikely((dwFlags & DDSCL_CREATEDEVICEWINDOW) && hWnd == nullptr
@@ -571,6 +591,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::SetDisplayMode(DWORD dwWidth, DWORD dwHeight, DWORD dwBPP, DWORD dwRefreshRate, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     Logger::debug(str::format("DDraw2Interface::SetDisplayMode: ", dwWidth, "x", dwHeight, ":", dwBPP, "@", dwRefreshRate));
 
     HRESULT hr = m_proxy->SetDisplayMode(dwWidth, dwHeight, dwBPP, dwRefreshRate, dwFlags);
@@ -603,6 +624,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::WaitForVerticalBlank(DWORD dwFlags, HANDLE hEvent) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(dwFlags & DDWAITVB_BLOCKBEGINEVENT))
       return DDERR_UNSUPPORTED;
 
@@ -623,6 +645,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw2Interface::GetAvailableVidMem(LPDDSCAPS lpDDCaps, LPDWORD lpdwTotal, LPDWORD lpdwFree) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpdwTotal == nullptr && lpdwFree == nullptr))
       return DD_OK;
 

@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "d3d_light.h"
 
 #include "d3d_viewport.h"
@@ -14,6 +15,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DLight::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -33,10 +35,12 @@ namespace dxvk {
   // Docs state: "The method returns DDERR_ALREADYINITIALIZED because
   // the Direct3DLight object is initialized when it is created."
   HRESULT STDMETHODCALLTYPE D3DLight::Initialize(IDirect3D *d3d) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE D3DLight::SetLight(D3DLIGHT *data) {
+    D7VK_DEFERRED_SYNC();
     static constexpr D3DCOLORVALUE noLight = {0.0f, 0.0f, 0.0f, 0.0f};
 
     if (unlikely(data == nullptr))
@@ -105,6 +109,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DLight::GetLight(D3DLIGHT *data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 

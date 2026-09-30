@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "ddraw_include.h"
 #include "ddraw_util.h"
 
@@ -78,6 +80,22 @@ namespace dxvk {
       return m_desc.dwCaps & D3DVBCAPS_OPTIMIZED;
     }
 
+    // Deferred mode: system memory VBs are backed by plain memory, so Lock() does not
+    // touch D3D9 on the app thread and draws can copy the vertices they use.
+    uint8_t* GetShadow() {
+      return m_shadow.empty() ? nullptr : m_shadow.data();
+    }
+
+    bool IsSystemMemory() const {
+      return m_desc.dwCaps & D3DVBCAPS_SYSTEMMEMORY;
+    }
+
+    void EnableShadow();
+
+    void FlushShadowToD3D9();
+
+    void ReadbackShadowFromD3D9();
+
   private:
 
     bool                              m_legacyDiscard   = false;
@@ -93,6 +111,8 @@ namespace dxvk {
     DWORD                             m_size            = 0;
 
     Com<d3d9::IDirect3DVertexBuffer9> m_vb9;
+
+    std::vector<uint8_t>              m_shadow;
 
   };
 

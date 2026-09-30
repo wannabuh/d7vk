@@ -1,3 +1,5 @@
+#include <algorithm>
+#include "../ddraw_deferred.h"
 #include "d3d7_device.h"
 
 #include "../ddraw_common_interface.h"
@@ -88,6 +90,9 @@ namespace dxvk {
   }
 
   D3D7Device::~D3D7Device() {
+    // Recorded commands reference this device
+    d7q::Sync();
+
     if (m_commonD3DDevice->GetD3D7Device() == this)
       m_commonD3DDevice->SetD3D7Device(nullptr);
 
@@ -96,6 +101,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -125,6 +131,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetCaps(D3DDEVICEDESC7 *desc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(desc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -134,6 +141,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK cb, void *ctx) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(cb == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -230,6 +238,11 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::BeginScene() {
+    if (d7q::Defer()) {
+      d7q::g_queue->Push([this] { BeginScene(); });
+      return D3D_OK;
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -247,6 +260,11 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::EndScene() {
+    if (d7q::Defer()) {
+      d7q::g_queue->Push([this] { EndScene(); });
+      return D3D_OK;
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -264,6 +282,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetDirect3D(IDirect3D7 **d3d) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(d3d == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -280,6 +299,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetRenderTarget(IDirectDrawSurface7 *surface, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(surface == nullptr))
@@ -337,6 +357,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetRenderTarget(IDirectDrawSurface7 **surface) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(surface == nullptr))
@@ -348,6 +369,17 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::Clear(DWORD count, D3DRECT *rects, DWORD flags, D3DCOLOR color, D3DVALUE z, DWORD stencil) {
+    if (d7q::Defer()) {
+      D3DRECT* rectsCopy = nullptr;
+      d7q::g_queue->Reserve(count * sizeof(D3DRECT) + 256);
+      if (rects != nullptr && count)
+        rectsCopy = static_cast<D3DRECT*>(d7q::g_queue->Copy(rects, count * sizeof(D3DRECT)));
+      d7q::g_queue->Push([this, count, rectsCopy, flags, color, z, stencil] {
+        Clear(count, rectsCopy, flags, color, z, stencil);
+      });
+      return D3D_OK;
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     // D3D7 and later fast skip
@@ -394,10 +426,17 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
+    if (d7q::Defer() && matrix != nullptr) {
+      d7q::g_queue->Push([this, state, m = *matrix] () mutable { SetTransform(state, &m); });
+      return D3D_OK;
+    }
+    D7VK_DEFERRED_SYNC();
+
     return m_commonD3DDevice->GetD3D9Device()->SetTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->GetTransform(ConvertTransformState(state), matrix);
   }
 
@@ -406,6 +445,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetViewport(D3DVIEWPORT7 *data) {
+    if (d7q::Defer() && data != nullptr) {
+      d7q::g_queue->Push([this, v = *data] () mutable { SetViewport(&v); });
+      return D3D_OK;
+    }
+    D7VK_DEFERRED_SYNC();
+
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(data == nullptr))
@@ -437,6 +482,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetViewport(D3DVIEWPORT7 *data) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(data == nullptr))
@@ -446,6 +492,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetMaterial(D3DMATERIAL7 *data) {
+    if (d7q::Defer() && data != nullptr) {
+      d7q::g_queue->Push([this, m = *data] () mutable { SetMaterial(&m); });
+      return D3D_OK;
+    }
+    D7VK_DEFERRED_SYNC();
+
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -453,6 +505,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetMaterial(D3DMATERIAL7 *data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -460,6 +513,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetLight(DWORD idx, D3DLIGHT7 *data) {
+    if (d7q::Defer() && data != nullptr) {
+      d7q::g_queue->Push([this, idx, l = *data] () mutable { SetLight(idx, &l); });
+      return D3D_OK;
+    }
+    D7VK_DEFERRED_SYNC();
+
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -488,6 +547,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetLight(DWORD idx, D3DLIGHT7 *data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -499,6 +559,11 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetRenderState(D3DRENDERSTATETYPE dwRenderStateType, DWORD dwRenderState) {
+    if (d7q::Defer()) {
+      d7q::g_queue->Push([this, dwRenderStateType, dwRenderState] { SetRenderState(dwRenderStateType, dwRenderState); });
+      return D3D_OK;
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     d3d9::D3DRENDERSTATETYPE State9 = d3d9::D3DRENDERSTATETYPE(dwRenderStateType);
@@ -672,6 +737,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lpdwRenderState == nullptr))
@@ -805,6 +871,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::BeginStateBlock() {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(m_recorder != nullptr))
@@ -825,6 +892,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::EndStateBlock(LPDWORD lpdwBlockHandle) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lpdwBlockHandle == nullptr))
@@ -849,6 +917,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::ApplyStateBlock(DWORD dwBlockHandle) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     // Applications cannot apply a state block while another is being recorded
@@ -866,6 +935,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::CaptureStateBlock(DWORD dwBlockHandle) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     // Applications cannot capture a state block while another is being recorded
@@ -883,6 +953,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DeleteStateBlock(DWORD dwBlockHandle) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     // Applications cannot delete a state block while another is being recorded
@@ -908,6 +979,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::CreateStateBlock(D3DSTATEBLOCKTYPE d3dsbType, LPDWORD lpdwBlockHandle) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lpdwBlockHandle == nullptr))
@@ -939,6 +1011,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::PreLoad(IDirectDrawSurface7 *surface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(surface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -966,6 +1039,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwVertexCount, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -998,6 +1072,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc, LPVOID lpvVertices, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1033,7 +1108,49 @@ namespace dxvk {
     return D3D_OK;
   }
 
+  void D3D7Device::DrawDeferredUP(
+          D3DPRIMITIVETYPE  primitiveType,
+          DWORD             fvf,
+          DWORD             stride,
+    const void*             vertices,
+          DWORD             vertexCount,
+    const WORD*             indices,
+          DWORD             indexCount) {
+    D3DDeviceLock lock = LockDevice();
+
+    RefreshLastUsedDevice();
+
+    DDrawDirtySurfaceUpload();
+
+    d3d9::IDirect3DDevice9* device9 = m_commonD3DDevice->GetD3D9Device();
+
+    device9->SetFVF(fvf);
+
+    HRESULT hr;
+    if (indices != nullptr) {
+      hr = device9->DrawIndexedPrimitiveUP(
+        d3d9::D3DPRIMITIVETYPE(primitiveType),
+        0, vertexCount,
+        GetPrimitiveCount(primitiveType, indexCount),
+        indices, d3d9::D3DFMT_INDEX16,
+        vertices, stride);
+    } else {
+      hr = device9->DrawPrimitiveUP(
+        d3d9::D3DPRIMITIVETYPE(primitiveType),
+        GetPrimitiveCount(primitiveType, vertexCount),
+        vertices, stride);
+    }
+
+    if (unlikely(FAILED(hr))) {
+      Logger::err("D3D7Device::DrawDeferredUP: Failed D3D9 draw");
+      return;
+    }
+
+    UpdateSurfaceDirtyTracking(true, m_commonD3DDevice->IsDepthWriteEnabled(), true);
+  }
+
   HRESULT STDMETHODCALLTYPE D3D7Device::SetClipStatus(D3DCLIPSTATUS *clip_status) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(clip_status == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1041,6 +1158,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetClipStatus(D3DCLIPSTATUS *clip_status) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(clip_status == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1048,6 +1166,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc, LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1083,6 +1202,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc, LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwVertexCount, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1122,6 +1242,29 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER7 lpd3dVertexBuffer, DWORD dwStartVertex, DWORD dwNumVertices, DWORD dwFlags) {
+    if (d7q::Defer()) {
+      D3D7VertexBuffer* vb7d = static_cast<D3D7VertexBuffer*>(lpd3dVertexBuffer);
+      if (likely(vb7d != nullptr && dwNumVertices && !vb7d->IsLocked())) {
+        D3DCommonBuffer* cb = vb7d->GetCommonBuffer();
+        const uint8_t* shadow = cb->GetShadow();
+        if (likely(shadow != nullptr && dwStartVertex + dwNumVertices <= cb->GetNumVertices())) {
+          const DWORD stride = cb->GetStride();
+          const DWORD fvf    = cb->GetFVF();
+          d7q::g_queue->Reserve(size_t(dwNumVertices) * stride + 256);
+          void* verts = d7q::g_queue->Copy(shadow + size_t(dwStartVertex) * stride, size_t(dwNumVertices) * stride);
+          d7q::g_queue->Push([this, d3dptPrimitiveType, fvf, stride, verts, dwNumVertices] {
+            DrawDeferredUP(d3dptPrimitiveType, fvf, stride, verts, dwNumVertices, nullptr, 0);
+          });
+          return D3D_OK;
+        }
+        // The draw reads the D3D9 buffer directly
+        d7q::Sync();
+        cb->FlushShadowToD3D9();
+      } else {
+        d7q::Sync();
+      }
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1167,6 +1310,34 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE d3dptPrimitiveType, LPDIRECT3DVERTEXBUFFER7 lpd3dVertexBuffer, DWORD dwStartVertex, DWORD dwNumVertices, LPWORD lpwIndices, DWORD dwIndexCount, DWORD dwFlags) {
+    if (d7q::Defer()) {
+      D3D7VertexBuffer* vb7d = static_cast<D3D7VertexBuffer*>(lpd3dVertexBuffer);
+      if (likely(vb7d != nullptr && lpwIndices != nullptr && dwNumVertices && dwIndexCount && !vb7d->IsLocked())) {
+        D3DCommonBuffer* cb = vb7d->GetCommonBuffer();
+        const uint8_t* shadow = cb->GetShadow();
+        // Indices are relative to dwStartVertex; copy every vertex they can reach
+        WORD maxIndex = 0;
+        for (DWORD i = 0; i < dwIndexCount; i++)
+          maxIndex = std::max(maxIndex, lpwIndices[i]);
+        const DWORD vertexCount = std::max<DWORD>(dwNumVertices, DWORD(maxIndex) + 1u);
+        if (likely(shadow != nullptr && dwStartVertex + vertexCount <= cb->GetNumVertices())) {
+          const DWORD stride = cb->GetStride();
+          const DWORD fvf    = cb->GetFVF();
+          d7q::g_queue->Reserve(size_t(vertexCount) * stride + size_t(dwIndexCount) * sizeof(WORD) + 256);
+          void* verts = d7q::g_queue->Copy(shadow + size_t(dwStartVertex) * stride, size_t(vertexCount) * stride);
+          WORD* indices = static_cast<WORD*>(d7q::g_queue->Copy(lpwIndices, size_t(dwIndexCount) * sizeof(WORD)));
+          d7q::g_queue->Push([this, d3dptPrimitiveType, fvf, stride, verts, vertexCount, indices, dwIndexCount] {
+            DrawDeferredUP(d3dptPrimitiveType, fvf, stride, verts, vertexCount, indices, dwIndexCount);
+          });
+          return D3D_OK;
+        }
+        d7q::Sync();
+        cb->FlushShadowToD3D9();
+      } else {
+        d7q::Sync();
+      }
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1236,6 +1407,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::ComputeSphereVisibility(D3DVECTOR *lpCenters, D3DVALUE *lpRadii, DWORD dwNumSpheres, DWORD dwFlags, DWORD *lpdwReturnValues) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpCenters == nullptr || lpRadii == nullptr || lpdwReturnValues == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1254,6 +1426,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetTexture(DWORD stage, IDirectDrawSurface7 **surface) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(surface == nullptr))
@@ -1268,6 +1441,18 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetTexture(DWORD stage, IDirectDrawSurface7 *surface) {
+    if (d7q::Defer()) {
+      // Keep the texture alive until the worker has bound it
+      if (surface != nullptr)
+        surface->AddRef();
+      d7q::g_queue->Push([this, stage, surface] {
+        SetTexture(stage, surface);
+        if (surface != nullptr)
+          surface->Release();
+      });
+      return D3D_OK;
+    }
+
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(stage >= ddrawCaps::TextureStageCount))
@@ -1376,6 +1561,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE d3dTexStageStateType, LPDWORD lpdwState) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpdwState == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1411,6 +1597,11 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE d3dTexStageStateType, DWORD dwState) {
+    if (d7q::Defer()) {
+      d7q::g_queue->Push([this, dwStage, d3dTexStageStateType, dwState] { SetTextureStageState(dwStage, d3dTexStageStateType, dwState); });
+      return D3D_OK;
+    }
+
     d3d9::IDirect3DDevice9* device9 = m_commonD3DDevice->GetD3D9Device();
 
     // In the case of D3DTSS_ADDRESS, which is exclusive to D3D7
@@ -1437,6 +1628,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::ValidateDevice(LPDWORD lpdwPasses) {
+    D7VK_DEFERRED_SYNC();
     HRESULT hr = m_commonD3DDevice->GetD3D9Device()->ValidateDevice(lpdwPasses);
     if (unlikely(FAILED(hr)))
       return DDERR_INVALIDPARAMS;
@@ -1446,6 +1638,7 @@ namespace dxvk {
 
   // This is a precursor of our ol' D3D8 pal CopyRects
   HRESULT STDMETHODCALLTYPE D3D7Device::Load(IDirectDrawSurface7 *dst_surface, POINT *dst_point, IDirectDrawSurface7 *src_surface, RECT *src_rect, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(dst_surface == nullptr || src_surface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1496,6 +1689,11 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::LightEnable(DWORD dwLightIndex, BOOL bEnable) {
+    if (d7q::Defer()) {
+      d7q::g_queue->Push([this, dwLightIndex, bEnable] { LightEnable(dwLightIndex, bEnable); });
+      return D3D_OK;
+    }
+
     HRESULT hr = m_commonD3DDevice->GetD3D9Device()->LightEnable(dwLightIndex, bEnable);
     if (unlikely(FAILED(hr)))
       return DDERR_INVALIDPARAMS;
@@ -1522,6 +1720,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetLightEnable(DWORD dwLightIndex, BOOL *pbEnable) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(pbEnable == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1533,15 +1732,18 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::SetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->SetClipPlane(dwIndex, pPlaneEquation);
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Device::GetClipPlane(DWORD dwIndex, D3DVALUE *pPlaneEquation) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->GetClipPlane(dwIndex, pPlaneEquation);
   }
 
   // Docs state: "This method returns S_FALSE on retail builds of DirectX."
   HRESULT STDMETHODCALLTYPE D3D7Device::GetInfo(DWORD info_id, void *info, DWORD info_size) {
+    D7VK_DEFERRED_SYNC();
     return S_FALSE;
   }
 

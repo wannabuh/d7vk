@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d7_interface.h"
 
 #include "d3d7_device.h"
@@ -67,6 +68,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -94,6 +96,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::EnumDevices(LPD3DENUMDEVICESCALLBACK7 cb, void *ctx) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(cb == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -157,6 +160,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::CreateDevice(REFCLSID rclsid, IDirectDrawSurface7 *surface, IDirect3DDevice7 **ppd3dDevice) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppd3dDevice == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -334,6 +338,9 @@ namespace dxvk {
         return hr;
 
       *ppd3dDevice = device7.ref();
+
+      if (m_commonIntf->GetOptions()->deferredMode)
+        d7q::Start();
     } catch (const DxvkError& e) {
       Logger::err(e.message());
       return DDERR_GENERIC;
@@ -343,6 +350,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::CreateVertexBuffer(D3DVERTEXBUFFERDESC *desc, IDirect3DVertexBuffer7 **ppVertexBuffer, DWORD usage) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(desc == nullptr || ppVertexBuffer == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -354,6 +362,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::EnumZBufferFormats(REFCLSID riidDevice, LPD3DENUMPIXELFORMATSCALLBACK lpEnumCallback, LPVOID lpContext) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpEnumCallback == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -423,6 +432,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7Interface::EvictManagedTextures() {
+    D7VK_DEFERRED_SYNC();
     HRESULT hr = m_proxy->EvictManagedTextures();
     if (unlikely(FAILED(hr)))
       return hr;

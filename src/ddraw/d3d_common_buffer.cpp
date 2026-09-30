@@ -1,4 +1,7 @@
+#include "ddraw_deferred.h"
 #include "d3d_common_buffer.h"
+
+#include <cstring>
 
 #include "d3d_common_device.h"
 
@@ -19,6 +22,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DCommonBuffer::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     *ppvObject = ref(this);
     return S_OK;
   }
@@ -48,6 +52,36 @@ namespace dxvk {
     }
 
     return D3D_OK;
+  }
+
+  void D3DCommonBuffer::EnableShadow() {
+    if (!m_shadow.empty())
+      return;
+
+    m_shadow.assign(m_size, 0u);
+    ReadbackShadowFromD3D9();
+  }
+
+  void D3DCommonBuffer::FlushShadowToD3D9() {
+    if (m_shadow.empty() || m_vb9 == nullptr)
+      return;
+
+    void* data = nullptr;
+    if (SUCCEEDED(m_vb9->Lock(0, 0, &data, 0)) && data != nullptr) {
+      std::memcpy(data, m_shadow.data(), m_size);
+      m_vb9->Unlock();
+    }
+  }
+
+  void D3DCommonBuffer::ReadbackShadowFromD3D9() {
+    if (m_shadow.empty() || m_vb9 == nullptr)
+      return;
+
+    void* data = nullptr;
+    if (SUCCEEDED(m_vb9->Lock(0, 0, &data, D3DLOCK_READONLY)) && data != nullptr) {
+      std::memcpy(m_shadow.data(), data, m_size);
+      m_vb9->Unlock();
+    }
   }
 
   void D3DCommonBuffer::RefreshD3DDevice() {
