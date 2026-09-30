@@ -415,20 +415,6 @@ namespace dxvk {
       return DDERR_UNSUPPORTED;
     }
 
-    // Write back any dirty surface data from bound D3D9 back buffers or
-    // depth stencils, for both the source surface and the current surface
-    if (likely(lpDDSrcSurface != nullptr)) {
-      DDrawSurface* sourceSurface = static_cast<DDrawSurface*>(lpDDSrcSurface);
-      sourceSurface->DownloadSurfaceData();
-    }
-    // No point in downloading the destination surface if it's going to be overwritten
-    if ((lpDDBltFx == nullptr || (dwFlags & DDBLT_COLORFILL) || (dwFlags & DDBLT_DEPTHFILL)) &&
-         m_commonSurf->IsFullSurfaceLock(lpDestRect, nullptr)) {
-      m_commonSurf->UnDirtyD3D9Surface();
-    } else {
-      DownloadSurfaceData();
-    }
-
     d3d9::IDirect3DDevice9* d3d9Device = m_commonSurf->GetRefreshedD3D9Device();
     if (likely(d3d9Device != nullptr)) {
       const bool exclusiveMode = m_commonIntf->GetCooperativeLevel() & DDSCL_EXCLUSIVE;
@@ -445,6 +431,20 @@ namespace dxvk {
           return DD_OK;
         }
       }
+    }
+
+    // Write back any dirty surface data from bound D3D9 back buffers or
+    // depth stencils, for both the source surface and the current surface
+    if (likely(lpDDSrcSurface != nullptr)) {
+      DDrawSurface* sourceSurface = static_cast<DDrawSurface*>(lpDDSrcSurface);
+      sourceSurface->DownloadSurfaceData();
+    }
+    // No point in downloading the destination surface if it's going to be overwritten
+    if ((lpDDBltFx == nullptr || (dwFlags & DDBLT_COLORFILL) || (dwFlags & DDBLT_DEPTHFILL)) &&
+         m_commonSurf->IsFullSurfaceLock(lpDestRect, nullptr)) {
+      m_commonSurf->UnDirtyD3D9Surface();
+    } else {
+      DownloadSurfaceData();
     }
 
     HRESULT hr;
@@ -485,22 +485,6 @@ namespace dxvk {
       return DDERR_UNSUPPORTED;
     }
 
-    const RECT* sourceFullSurfaceRect = nullptr;
-    // Write back any dirty surface data from bound D3D9 back buffers or
-    // depth stencils, for both the source surface and the current surface
-    if (likely(lpDDSrcSurface != nullptr)) {
-      DDrawSurface* sourceSurface = static_cast<DDrawSurface*>(lpDDSrcSurface);
-      sourceSurface->DownloadSurfaceData();
-      sourceFullSurfaceRect = sourceSurface->GetCommonSurface()->GetFullSurfaceRect();
-    }
-    // No point in downloading the destination surface if it's going to be overwritten
-    if (dwX == 0 && dwY == 0 && (dwTrans & DDBLTFAST_NOCOLORKEY) &&
-        m_commonSurf->IsFullSurfaceLock(lpSrcRect, sourceFullSurfaceRect)) {
-      m_commonSurf->UnDirtyD3D9Surface();
-    } else {
-      DownloadSurfaceData();
-    }
-
     d3d9::IDirect3DDevice9* d3d9Device = m_commonSurf->GetRefreshedD3D9Device();
     if (likely(d3d9Device != nullptr)) {
       const bool exclusiveMode = m_commonIntf->GetCooperativeLevel() & DDSCL_EXCLUSIVE;
@@ -517,6 +501,22 @@ namespace dxvk {
           return DD_OK;
         }
       }
+    }
+
+    const RECT* sourceFullSurfaceRect = nullptr;
+    // Write back any dirty surface data from bound D3D9 back buffers or
+    // depth stencils, for both the source surface and the current surface
+    if (likely(lpDDSrcSurface != nullptr)) {
+      DDrawSurface* sourceSurface = static_cast<DDrawSurface*>(lpDDSrcSurface);
+      sourceSurface->DownloadSurfaceData();
+      sourceFullSurfaceRect = sourceSurface->GetCommonSurface()->GetFullSurfaceRect();
+    }
+    // No point in downloading the destination surface if it's going to be overwritten
+    if (dwX == 0 && dwY == 0 && (dwTrans & DDBLTFAST_NOCOLORKEY) &&
+        m_commonSurf->IsFullSurfaceLock(lpSrcRect, sourceFullSurfaceRect)) {
+      m_commonSurf->UnDirtyD3D9Surface();
+    } else {
+      DownloadSurfaceData();
     }
 
     HRESULT hr;
