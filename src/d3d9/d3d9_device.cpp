@@ -4789,7 +4789,7 @@ namespace dxvk {
   }
 
 
-  D3D9BufferSlice D3D9DeviceEx::AllocUPBuffer(VkDeviceSize size) {
+  D3D9BufferSlice D3D9DeviceEx::AllocUPBuffer(VkDeviceSize size, bool createSlice) {
     constexpr VkDeviceSize UPBufferSize = 1 << 20;
 
     if (unlikely(m_upBuffer == nullptr || size > UPBufferSize)) {
@@ -4839,7 +4839,14 @@ namespace dxvk {
     }
 
     D3D9BufferSlice result;
-    result.slice = DxvkBufferSlice(m_upBuffer, m_upBufferOffset, size);
+    if (likely(createSlice)) {
+      result.slice = DxvkBufferSlice(m_upBuffer, m_upBufferOffset, size);
+    } else {
+      // No reference taken here: the CS thread builds the slice itself. m_upBuffer
+      // lives until the device is destroyed, which synchronizes the CS thread first.
+      result.rawBuffer = m_upBuffer.ptr();
+      result.rawOffset = m_upBufferOffset;
+    }
     result.mapPtr = reinterpret_cast<char*>(m_upBufferMapPtr) + m_upBufferOffset;
 
     m_upBufferOffset += alignedSize;
@@ -5809,7 +5816,13 @@ namespace dxvk {
       return;
     }
 
-    auto upSlice = AllocUPBuffer(totalUpBufferSize);
+    // Per-draw uploads happen hundreds of thousands of times per second in some games.
+    // Building the slices on the CS thread keeps this thread from touching the UP buffer's
+    // reference count, which the CS thread updates concurrently (on 32-bit builds each
+    // 64-bit atomic is a contended lock cmpxchg8b loop).
+    auto upSlice = AllocUPBuffer(totalUpBufferSize, false);
+    DxvkBuffer*  upRawBuffer = upSlice.rawBuffer;
+    VkDeviceSize upRawOffset = upSlice.rawOffset;
 
     // Now copy the actual data and bind it.
     if (dynamicSysmemVBOs) {
@@ -5837,14 +5850,26 @@ namespace dxvk {
           }
         }
 
-        auto vboSlice = upSlice.slice.subSlice(copy.dstOffset, copy.copyBufferLength);
-        EmitCs([
-          cStream      = i,
-          cBufferSlice = std::move(vboSlice),
-          cStride      = copy.copyElementSize
-        ](DxvkContext* ctx) mutable {
-          ctx->bindVertexBuffer(cStream, std::move(cBufferSlice), cStride);
-        });
+        if (likely(upRawBuffer != nullptr)) {
+          EmitCs([
+            cStream = i,
+            cBuffer = upRawBuffer,
+            cOffset = upRawOffset + copy.dstOffset,
+            cLength = VkDeviceSize(copy.copyBufferLength),
+            cStride = copy.copyElementSize
+          ](DxvkContext* ctx) {
+            ctx->bindVertexBuffer(cStream, DxvkBufferSlice(Rc<DxvkBuffer>(cBuffer), cOffset, cLength), cStride);
+          });
+        } else {
+          auto vboSlice = upSlice.slice.subSlice(copy.dstOffset, copy.copyBufferLength);
+          EmitCs([
+            cStream      = i,
+            cBufferSlice = std::move(vboSlice),
+            cStride      = copy.copyElementSize
+          ](DxvkContext* ctx) mutable {
+            ctx->bindVertexBuffer(cStream, std::move(cBufferSlice), cStride);
+          });
+        }
         m_dirty.set(D3D9DeviceDirtyFlag::VertexBuffers);
       }
 
@@ -5871,13 +5896,24 @@ namespace dxvk {
         uint8_t* src = reinterpret_cast<uint8_t*>(ibo->GetMappedSlice()->mapPtr()) + offset;
         std::memcpy(data, src, iboUPBufferSize);
 
-        auto iboSlice = upSlice.slice.subSlice(iboUPBufferOffset, iboUPBufferSize);
-        EmitCs([
-          cBufferSlice = std::move(iboSlice),
-          cIndexType = indexType
-        ](DxvkContext* ctx) mutable {
-          ctx->bindIndexBuffer(std::move(cBufferSlice), cIndexType);
-        });
+        if (likely(upRawBuffer != nullptr)) {
+          EmitCs([
+            cBuffer    = upRawBuffer,
+            cOffset    = upRawOffset + iboUPBufferOffset,
+            cLength    = VkDeviceSize(iboUPBufferSize),
+            cIndexType = indexType
+          ](DxvkContext* ctx) {
+            ctx->bindIndexBuffer(DxvkBufferSlice(Rc<DxvkBuffer>(cBuffer), cOffset, cLength), cIndexType);
+          });
+        } else {
+          auto iboSlice = upSlice.slice.subSlice(iboUPBufferOffset, iboUPBufferSize);
+          EmitCs([
+            cBufferSlice = std::move(iboSlice),
+            cIndexType = indexType
+          ](DxvkContext* ctx) mutable {
+            ctx->bindIndexBuffer(std::move(cBufferSlice), cIndexType);
+          });
+        }
         m_dirty.set(D3D9DeviceDirtyFlag::IndexBuffer);
       }
 

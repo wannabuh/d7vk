@@ -103,6 +103,10 @@ namespace dxvk {
   struct D3D9BufferSlice {
     DxvkBufferSlice slice = {};
     void*           mapPtr = nullptr;
+    // Set instead of slice when AllocUPBuffer is asked not to create one:
+    // the long-lived UP buffer and the offset into it
+    DxvkBuffer*     rawBuffer = nullptr;
+    VkDeviceSize    rawOffset = 0ull;
   };
 
   struct D3D9TextureSlotTracking {
@@ -1286,7 +1290,7 @@ namespace dxvk {
     /**
      * \brief Allocates buffer memory for DrawPrimitiveUp draws
      */
-    D3D9BufferSlice AllocUPBuffer(VkDeviceSize size);
+    D3D9BufferSlice AllocUPBuffer(VkDeviceSize size, bool createSlice = true);
 
     /**
      * \brief Allocates buffer memory for resource uploads
