@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "ddraw_class_factory.h"
 
 namespace dxvk {
@@ -10,6 +11,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClassFactory::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -27,6 +29,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClassFactory::CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppvObject) {
+    D7VK_DEFERRED_SYNC();
     return m_createInstance(pUnkOuter, riid, ppvObject);
   }
 
@@ -34,6 +37,7 @@ namespace dxvk {
   // "Most clients do not need to call this method. It is provided only for those clients
   //  that require special performance in creating multiple instances of their objects."
   HRESULT STDMETHODCALLTYPE DDrawClassFactory::LockServer(BOOL fLock) {
+    D7VK_DEFERRED_SYNC();
     return S_OK;
   }
 

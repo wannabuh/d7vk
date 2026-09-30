@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d3_interface.h"
 
 #include "d3d3_material.h"
@@ -78,6 +79,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -126,10 +128,12 @@ namespace dxvk {
   // Docs state: "This method is provided for compliance with the COM protocol.
   // Returns DDERR_ALREADYINITIALIZED because the Direct3D object is initialized when it is created."
   HRESULT STDMETHODCALLTYPE D3D3Interface::Initialize(REFIID riid) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpEnumDevicesCallback == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -253,6 +257,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::CreateLight(LPDIRECT3DLIGHT *lplpDirect3DLight, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDirect3DLight == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -264,6 +269,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::CreateMaterial(LPDIRECT3DMATERIAL *lplpDirect3DMaterial, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDirect3DMaterial == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -275,6 +281,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::CreateViewport(LPDIRECT3DVIEWPORT *lplpD3DViewport, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     InitReturnPtr(lplpD3DViewport);
 
     *lplpD3DViewport = ref(new D3DViewport(this));
@@ -283,6 +290,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Interface::FindDevice(D3DFINDDEVICESEARCH *lpD3DFDS, D3DFINDDEVICERESULT *lpD3DFDR) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpD3DFDS == nullptr || lpD3DFDR == nullptr))
       return DDERR_INVALIDPARAMS;
 

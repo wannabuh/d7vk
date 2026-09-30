@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "ddraw_clipper.h"
 
 namespace dxvk {
@@ -14,6 +15,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::Initialize(LPDIRECTDRAW lpDD, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_isInitialized))
       return DDERR_ALREADYINITIALIZED;
 
@@ -23,6 +25,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -40,18 +43,22 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::GetClipList(LPRECT lpRect, LPRGNDATA lpClipList, LPDWORD lpdwSize) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetClipList(lpRect, lpClipList, lpdwSize);
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::IsClipListChanged(BOOL *lpbChanged) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->IsClipListChanged(lpbChanged);
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::SetClipList(LPRGNDATA lpClipList, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->SetClipList(lpClipList, dwFlags);
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::SetHWnd(DWORD dwFlags, HWND hWnd) {
+    D7VK_DEFERRED_SYNC();
     HRESULT hr = m_proxy->SetHWnd(dwFlags, hWnd);
     if (unlikely(FAILED(hr)))
       return hr;
@@ -67,6 +74,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawClipper::GetHWnd(HWND *lphWnd) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetHWnd(lphWnd);
   }
 

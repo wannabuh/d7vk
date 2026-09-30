@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "ddraw_gamma.h"
 
 #include "d3d_common_device.h"
@@ -16,6 +17,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawGammaControl::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -55,6 +57,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawGammaControl::GetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpRampData == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -78,6 +81,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDrawGammaControl::SetGammaRamp(DWORD dwFlags, LPDDGAMMARAMP lpRampData) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpRampData == nullptr))
       return DDERR_INVALIDPARAMS;
 

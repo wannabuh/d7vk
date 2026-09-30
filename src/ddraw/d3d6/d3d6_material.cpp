@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d6_material.h"
 
 #include "d3d6_interface.h"
@@ -26,6 +27,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Material::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -43,6 +45,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Material::SetMaterial(D3DMATERIAL* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -55,6 +58,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Material::GetMaterial(D3DMATERIAL* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -62,6 +66,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Material::GetHandle(IDirect3DDevice3* device, D3DMATERIALHANDLE* handle) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(device == nullptr || handle == nullptr))
       return DDERR_INVALIDPARAMS;
 

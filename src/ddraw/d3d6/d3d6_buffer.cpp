@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d6_buffer.h"
 
 #include "../d3d_common_device.h"
@@ -33,6 +34,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -50,6 +52,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::GetVertexBufferDesc(LPD3DVERTEXBUFFERDESC lpVBDesc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpVBDesc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -64,6 +67,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::Lock(DWORD flags, void **data, DWORD *data_size) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_commonBuffer->IsOptimized()))
       return D3DERR_VERTEXBUFFEROPTIMIZED;
 
@@ -88,6 +92,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::Unlock() {
+    D7VK_DEFERRED_SYNC();
     // Ignore the unlock call if the D3D9 buffer
     // was lost since the previous Lock() call
     if (unlikely(!m_commonBuffer->IsInitialized())) {
@@ -106,6 +111,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::ProcessVertices(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount, LPDIRECT3DVERTEXBUFFER lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE3 lpD3DDevice, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(!dwCount))
       return D3D_OK;
 
@@ -242,6 +248,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6VertexBuffer::Optimize(LPDIRECT3DDEVICE3 lpD3DDevice, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpD3DDevice == nullptr))
       return DDERR_INVALIDPARAMS;
 

@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d3_texture.h"
 
 #include "../ddraw_common_surface.h"
@@ -34,6 +35,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Texture::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -76,6 +78,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Texture::GetHandle(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DTEXTUREHANDLE lpHandle) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDirect3DDevice == nullptr || lpHandle == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -85,10 +88,12 @@ namespace dxvk {
   // Docs state: "This method only affects the legacy ramp device.
   // For all other devices, this method takes no action and returns D3D_OK."
   HRESULT STDMETHODCALLTYPE D3D3Texture::PaletteChanged(DWORD dwStart, DWORD dwCount) {
+    D7VK_DEFERRED_SYNC();
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Texture::Load(LPDIRECT3DTEXTURE lpD3DTexture) {
+    D7VK_DEFERRED_SYNC();
     Com<D3D3Texture> d3d3Texture = static_cast<D3D3Texture*>(lpD3DTexture);
 
     // Fast skip
@@ -123,11 +128,13 @@ namespace dxvk {
 
   // Docs state: "Returns DDERR_ALREADYINITIALIZED because the Direct3DTexture object is initialized when it is created."
   HRESULT STDMETHODCALLTYPE D3D3Texture::Initialize(LPDIRECT3DDEVICE lpDirect3DDevice, LPDIRECTDRAWSURFACE lpDDSurface) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   // Nothing to do here, this isn't managed texture unloading
   HRESULT STDMETHODCALLTYPE D3D3Texture::Unload() {
+    D7VK_DEFERRED_SYNC();
     return D3D_OK;
   }
 

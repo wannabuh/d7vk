@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d7_buffer.h"
 
 #include "../d3d_common_device.h"
@@ -35,6 +36,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -52,6 +54,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::GetVertexBufferDesc(LPD3DVERTEXBUFFERDESC lpVBDesc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpVBDesc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -68,6 +71,26 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::Lock(DWORD flags, void **data, DWORD *data_size) {
     if (unlikely(m_commonBuffer->IsOptimized()))
       return D3DERR_VERTEXBUFFEROPTIMIZED;
+
+    if (d7q::Defer()) {
+      if (likely(m_commonBuffer->IsSystemMemory() && data != nullptr)) {
+        if (unlikely(m_commonBuffer->GetShadow() == nullptr)) {
+          // First lock: initialize from the D3D9 buffer, which needs an idle worker
+          d7q::Sync();
+          m_commonBuffer->RefreshD3DDevice();
+          m_commonBuffer->EnableShadow();
+        }
+
+        if (data_size != nullptr)
+          *data_size = m_commonBuffer->GetSize();
+
+        *data = m_commonBuffer->GetShadow();
+        m_locked = true;
+        return D3D_OK;
+      }
+
+      d7q::Sync();
+    }
 
     m_commonBuffer->RefreshD3DDevice();
     if (unlikely(!m_commonBuffer->IsInitialized())) {
@@ -90,6 +113,15 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::Unlock() {
+    if (d7q::Defer()) {
+      if (likely(m_commonBuffer->GetShadow() != nullptr)) {
+        m_locked = false;
+        return D3D_OK;
+      }
+
+      d7q::Sync();
+    }
+
     // Ignore the unlock call if the D3D9 buffer
     // was lost since the previous Lock() call
     if (unlikely(!m_commonBuffer->IsInitialized())) {
@@ -108,6 +140,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::ProcessVertices(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount, LPDIRECT3DVERTEXBUFFER7 lpSrcBuffer, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(!dwCount))
       return D3D_OK;
 
@@ -135,6 +168,10 @@ namespace dxvk {
       if (unlikely(FAILED(hrInit)))
         return hrInit;
     }
+
+    // Deferred mode: this runs synced; bring the D3D9 buffers up to date with the shadows
+    srcCommonBuffer->FlushShadowToD3D9();
+    m_commonBuffer->FlushShadowToD3D9();
 
     D3D7Device* device7 = static_cast<D3D7Device*>(lpD3DDevice);
 
@@ -213,10 +250,14 @@ namespace dxvk {
       }
     }
 
+    // Deferred mode: draws read the shadow, so pick up the processed vertices
+    m_commonBuffer->ReadbackShadowFromD3D9();
+
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::ProcessVerticesStrided(DWORD dwVertexOp, DWORD dwDestIndex, DWORD dwCount, LPD3DDRAWPRIMITIVESTRIDEDDATA lpVertexArray, DWORD dwSrcIndex, LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(!dwCount))
       return D3D_OK;
 
@@ -242,6 +283,8 @@ namespace dxvk {
     }
 
     D3DDeviceLock lock = device7->LockDevice();
+
+    m_commonBuffer->FlushShadowToD3D9();
 
     d3d9::IDirect3DVertexBuffer9* dstBuffer9 = m_commonBuffer->GetD3D9VertexBuffer();
     d3d9::IDirect3DDevice9* device9 = device7->GetCommonD3DDevice()->GetD3D9Device();
@@ -292,10 +335,13 @@ namespace dxvk {
 
     dstBuffer9->Unlock();
 
+    m_commonBuffer->ReadbackShadowFromD3D9();
+
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D7VertexBuffer::Optimize(LPDIRECT3DDEVICE7 lpD3DDevice, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpD3DDevice == nullptr))
       return DDERR_INVALIDPARAMS;
 

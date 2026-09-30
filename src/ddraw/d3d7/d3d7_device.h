@@ -98,6 +98,16 @@ namespace dxvk {
 
     HRESULT STDMETHODCALLTYPE DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type, DWORD fvf, void *pVertex, DWORD vertexCount, WORD *pIndex, DWORD indexCount, DWORD flags);
 
+    // Deferred mode: executes a recorded VB draw from copied vertex/index data
+    void DrawDeferredUP(
+            D3DPRIMITIVETYPE  primitiveType,
+            DWORD             fvf,
+            DWORD             stride,
+      const void*             vertices,
+            DWORD             vertexCount,
+      const WORD*             indices,
+            DWORD             indexCount);
+
     HRESULT STDMETHODCALLTYPE SetClipStatus(D3DCLIPSTATUS *clip_status);
 
     HRESULT STDMETHODCALLTYPE GetClipStatus(D3DCLIPSTATUS *clip_status);

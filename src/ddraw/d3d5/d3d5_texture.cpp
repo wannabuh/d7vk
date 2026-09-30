@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d5_texture.h"
 
 #include "../ddraw_common_surface.h"
@@ -35,6 +36,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Texture::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -77,6 +79,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Texture::GetHandle(LPDIRECT3DDEVICE2 lpDirect3DDevice2, LPD3DTEXTUREHANDLE lpHandle) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDirect3DDevice2 == nullptr || lpHandle == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -86,10 +89,12 @@ namespace dxvk {
   // Docs state: "This method only affects the legacy ramp device.
   // For all other devices, this method takes no action and returns D3D_OK."
   HRESULT STDMETHODCALLTYPE D3D5Texture::PaletteChanged(DWORD dwStart, DWORD dwCount) {
+    D7VK_DEFERRED_SYNC();
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Texture::Load(LPDIRECT3DTEXTURE2 lpD3DTexture2) {
+    D7VK_DEFERRED_SYNC();
     Com<D3D5Texture> d3d5Texture = static_cast<D3D5Texture*>(lpD3DTexture2);
 
     // Fast skip

@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d3_execute_buffer.h"
 
 namespace dxvk {
@@ -11,6 +12,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -28,6 +30,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::GetExecuteData(LPD3DEXECUTEDATA lpData) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock;
 
     if (unlikely(m_executed))
@@ -48,10 +51,12 @@ namespace dxvk {
   // Docs state: "Returns DDERR_ALREADYINITIALIZED because the
   // Direct3DExecuteBuffer object is initialized when it is created."
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::Initialize(LPDIRECT3DDEVICE lpDirect3DDevice, LPD3DEXECUTEBUFFERDESC lpDesc) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::Lock(LPD3DEXECUTEBUFFERDESC lpDesc) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock;
 
     if (unlikely(m_executed))
@@ -78,10 +83,12 @@ namespace dxvk {
 
   // Docs state: "Not currently implemented."
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::Optimize(DWORD dwUnknown) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::SetExecuteData(LPD3DEXECUTEDATA lpData) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock;
 
     if (unlikely(m_executed))
@@ -113,6 +120,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::Unlock() {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock;
 
     if (unlikely(m_executed))
@@ -128,6 +136,7 @@ namespace dxvk {
 
   // Docs state: "Not currently implemented."
   HRESULT STDMETHODCALLTYPE D3D3ExecuteBuffer::Validate(LPDWORD lpdwOffset, LPD3DVALIDATECALLBACK lpFunc, LPVOID lpUserArg, DWORD dwReserved) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 

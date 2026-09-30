@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d6_device.h"
 
 #include "../d3d_viewport.h"
@@ -120,6 +121,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -182,6 +184,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetCaps(D3DDEVICEDESC *hal_desc, D3DDEVICEDESC *hel_desc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(hal_desc == nullptr || hel_desc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -222,10 +225,12 @@ namespace dxvk {
   // Docs state: "The IDirect3DDevice3::GetStats method is obsolete,
   // and not implemented in the IDirect3DDevice3 interface."
   HRESULT STDMETHODCALLTYPE D3D6Device::GetStats(D3DSTATS *stats) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::AddViewport(IDirect3DViewport3 *viewport) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(viewport == nullptr))
@@ -237,6 +242,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DeleteViewport(IDirect3DViewport3 *viewport) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(viewport == nullptr))
@@ -248,6 +254,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::NextViewport(IDirect3DViewport3 *lpDirect3DViewport, IDirect3DViewport3 **lplpAnotherViewport, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lplpAnotherViewport == nullptr))
@@ -262,6 +269,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::EnumTextureFormats(LPD3DENUMPIXELFORMATSCALLBACK cb, void *ctx) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(cb == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -357,6 +365,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::BeginScene() {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -374,6 +383,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::EndScene() {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -391,6 +401,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetDirect3D(IDirect3D3 **d3d) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(d3d == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -407,6 +418,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetCurrentViewport(IDirect3DViewport3 *viewport) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(viewport == nullptr))
@@ -440,6 +452,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetCurrentViewport(IDirect3DViewport3 **viewport) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     // This does indeed return D3DERR_NOCURRENTVIEWPORT...
@@ -460,6 +473,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetRenderTarget(IDirectDrawSurface4 *surface, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(surface == nullptr))
@@ -517,6 +531,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetRenderTarget(IDirectDrawSurface4 **surface) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(surface == nullptr))
@@ -528,6 +543,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::Begin(D3DPRIMITIVETYPE d3dptPrimitiveType, DWORD dwVertexTypeDesc, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(m_vertexStream.isInitialized()))
@@ -551,11 +567,13 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::BeginIndexed(D3DPRIMITIVETYPE primitive_type, DWORD fvf, void *vertices, DWORD vertex_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     Logger::warn("!!! D3D6Device::BeginIndexed: Stub");
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::Vertex(void *vertex) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(vertex == nullptr))
@@ -582,11 +600,13 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::Index(WORD wVertexIndex) {
+    D7VK_DEFERRED_SYNC();
     Logger::warn("!!! D3D6Device::Index: Stub");
     return D3D_OK;
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::End(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(!m_vertexStream.isInitialized()))
@@ -623,6 +643,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetRenderState(D3DRENDERSTATETYPE dwRenderStateType, LPDWORD lpdwRenderState) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lpdwRenderState == nullptr))
@@ -924,6 +945,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetRenderState(D3DRENDERSTATETYPE dwRenderStateType, DWORD dwRenderState) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     d3d9::IDirect3DDevice9* device9 = m_commonD3DDevice->GetD3D9Device();
@@ -1398,6 +1420,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetLightState(D3DLIGHTSTATETYPE dwLightStateType, LPDWORD lpdwLightState) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(lpdwLightState == nullptr))
@@ -1438,6 +1461,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetLightState(D3DLIGHTSTATETYPE dwLightStateType, DWORD dwLightState) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     d3d9::IDirect3DDevice9* device9 = m_commonD3DDevice->GetD3D9Device();
@@ -1490,18 +1514,22 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->SetTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->GetTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::MultiplyTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
+    D7VK_DEFERRED_SYNC();
     return m_commonD3DDevice->GetD3D9Device()->MultiplyTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawPrimitive(D3DPRIMITIVETYPE primitive_type, DWORD vertex_type, void *vertices, DWORD vertex_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1549,6 +1577,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawIndexedPrimitive(D3DPRIMITIVETYPE primitive_type, DWORD fvf, void *vertices, DWORD vertex_count, WORD *indices, DWORD index_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1600,6 +1629,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetClipStatus(D3DCLIPSTATUS *clip_status) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(clip_status == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1607,6 +1637,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetClipStatus(D3DCLIPSTATUS *clip_status) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(clip_status == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1614,6 +1645,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawPrimitiveStrided(D3DPRIMITIVETYPE primitive_type, DWORD fvf, D3DDRAWPRIMITIVESTRIDEDDATA *strided_data, DWORD vertex_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1664,6 +1696,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawIndexedPrimitiveStrided(D3DPRIMITIVETYPE primitive_type, DWORD fvf, D3DDRAWPRIMITIVESTRIDEDDATA *strided_data, DWORD vertex_count, WORD *indices, DWORD index_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1718,6 +1751,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawPrimitiveVB(D3DPRIMITIVETYPE primitive_type, IDirect3DVertexBuffer *vb, DWORD start_vertex, DWORD vertex_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1779,6 +1813,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::DrawIndexedPrimitiveVB(D3DPRIMITIVETYPE primitive_type, IDirect3DVertexBuffer *vb, WORD *indices, DWORD index_count, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     RefreshLastUsedDevice();
@@ -1864,6 +1899,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::ComputeSphereVisibility(D3DVECTOR *lpCenters, D3DVALUE *lpRadii, DWORD dwNumSpheres, DWORD dwFlags, DWORD *lpdwReturnValues) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpCenters == nullptr || lpRadii == nullptr || lpdwReturnValues == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -1882,6 +1918,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetTexture(DWORD stage, IDirect3DTexture2 **texture) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(texture == nullptr))
@@ -1896,6 +1933,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetTexture(DWORD stage, IDirect3DTexture2 *texture) {
+    D7VK_DEFERRED_SYNC();
     D3DDeviceLock lock = LockDevice();
 
     if (unlikely(stage >= ddrawCaps::TextureStageCount))
@@ -1982,6 +2020,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::GetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE d3dTexStageStateType, LPDWORD lpdwState) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpdwState == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -2017,6 +2056,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::SetTextureStageState(DWORD dwStage, D3DTEXTURESTAGESTATETYPE d3dTexStageStateType, DWORD dwState) {
+    D7VK_DEFERRED_SYNC();
     d3d9::IDirect3DDevice9* device9 = m_commonD3DDevice->GetD3D9Device();
 
     // In the case of D3DTSS_ADDRESS, which is exclusive to D3D7
@@ -2047,6 +2087,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D6Device::ValidateDevice(LPDWORD lpdwPasses) {
+    D7VK_DEFERRED_SYNC();
     HRESULT hr = m_commonD3DDevice->GetD3D9Device()->ValidateDevice(lpdwPasses);
     if (unlikely(FAILED(hr)))
       return DDERR_INVALIDPARAMS;

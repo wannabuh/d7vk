@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "d3d_viewport.h"
 
 #include "../util/sync/sync_scoped.h"
@@ -33,6 +34,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -57,10 +59,12 @@ namespace dxvk {
 
   // Docs state: "The IDirect3DViewport3::Initialize method is not implemented."
   HRESULT STDMETHODCALLTYPE D3DViewport::Initialize(IDirect3D* d3d) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::GetViewport(D3DVIEWPORT* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -86,6 +90,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::SetViewport(D3DVIEWPORT* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -134,6 +139,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::TransformVertices(DWORD vertex_count, D3DTRANSFORMDATA* data, DWORD flags, DWORD* offscreen) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_commonD3DDevice == nullptr))
       return D3DERR_VIEWPORTHASNODEVICE;
 
@@ -263,10 +269,12 @@ namespace dxvk {
 
   // Docs state: "The IDirect3DViewport3::LightElements method is not currently implemented."
   HRESULT STDMETHODCALLTYPE D3DViewport::LightElements(DWORD element_count, D3DLIGHTDATA* data) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::SetBackground(D3DMATERIALHANDLE hMat) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(m_materialHandle == hMat))
       return D3D_OK;
 
@@ -285,6 +293,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::GetBackground(D3DMATERIALHANDLE* material, BOOL* valid) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(material == nullptr || valid == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -295,6 +304,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::SetBackgroundDepth(IDirectDrawSurface* surface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(surface != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(surface))) {
       Logger::err("D3DViewport::SetBackgroundDepth: Received an unwrapped surface");
@@ -309,6 +319,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::GetBackgroundDepth(IDirectDrawSurface** surface, BOOL* valid) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(surface == nullptr || valid == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -321,6 +332,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::Clear(DWORD count, D3DRECT* rects, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     // Early D3D viewport fast skip
     if (unlikely(!count || !rects))
       return D3D_OK;
@@ -395,6 +407,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::AddLight(IDirect3DLight* light) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(light == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -415,6 +428,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::DeleteLight(IDirect3DLight* light) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(light == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -439,6 +453,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::NextLight(IDirect3DLight* lpDirect3DLight, IDirect3DLight** lplpDirect3DLight, DWORD flags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDirect3DLight == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -462,6 +477,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::GetViewport2(D3DVIEWPORT2* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -487,6 +503,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::SetViewport2(D3DVIEWPORT2* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -533,6 +550,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::SetBackgroundDepth2(IDirectDrawSurface4* surface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(surface != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(surface))) {
       Logger::err("D3DViewport::SetBackgroundDepth2: Received an unwrapped surface");
@@ -547,6 +565,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::GetBackgroundDepth2(IDirectDrawSurface4** surface, BOOL* valid) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(surface == nullptr || valid == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -559,6 +578,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DViewport::Clear2(DWORD count, D3DRECT* rects, DWORD flags, DWORD color, D3DVALUE z, DWORD stencil) {
+    D7VK_DEFERRED_SYNC();
     // Early D3D viewport fast skip
     if (unlikely(!count || !rects))
       return D3D_OK;

@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d5_interface.h"
 
 #include "d3d5_device.h"
@@ -74,6 +75,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -125,6 +127,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::EnumDevices(LPD3DENUMDEVICESCALLBACK lpEnumDevicesCallback, LPVOID lpUserArg) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpEnumDevicesCallback == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -248,6 +251,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::CreateLight(LPDIRECT3DLIGHT *lplpDirect3DLight, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDirect3DLight == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -259,6 +263,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::CreateMaterial(LPDIRECT3DMATERIAL2 *lplpDirect3DMaterial, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDirect3DMaterial == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -270,6 +275,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::CreateViewport(LPDIRECT3DVIEWPORT2 *lplpD3DViewport, IUnknown *pUnkOuter) {
+    D7VK_DEFERRED_SYNC();
     InitReturnPtr(lplpD3DViewport);
 
     *lplpD3DViewport = ref(new D3DViewport(this));
@@ -279,6 +285,7 @@ namespace dxvk {
 
   // Minimal implementation which should suffice in most cases
   HRESULT STDMETHODCALLTYPE D3D5Interface::FindDevice(D3DFINDDEVICESEARCH *lpD3DFDS, D3DFINDDEVICERESULT *lpD3DFDR) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpD3DFDS == nullptr || lpD3DFDR == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -373,6 +380,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Interface::CreateDevice(REFCLSID rclsid, LPDIRECTDRAWSURFACE lpDDS, LPDIRECT3DDEVICE2 *lplpD3DDevice) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpD3DDevice == nullptr))
       return DDERR_INVALIDPARAMS;
 

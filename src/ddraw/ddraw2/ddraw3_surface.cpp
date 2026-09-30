@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "ddraw3_surface.h"
 
 #include "../d3d_common_device.h"
@@ -123,6 +124,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -262,6 +264,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::AddAttachedSurface(LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSAttachedSurface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -308,10 +311,12 @@ namespace dxvk {
   // Docs: "This method is used for the software implementation.
   // It is not needed if the overlay support is provided by the hardware."
   HRESULT STDMETHODCALLTYPE DDraw3Surface::AddOverlayDirtyRect(LPRECT lpRect) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Blt(LPRECT lpDestRect, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwFlags, LPDDBLTFX lpDDBltFx) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSrcSurface != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(lpDDSrcSurface))) {
       // Powerslide tries to blit here from a IDirectDrawSurface source
@@ -383,10 +388,12 @@ namespace dxvk {
 
   // Docs: "The IDirectDrawSurface3::BltBatch method is not currently implemented."
   HRESULT STDMETHODCALLTYPE DDraw3Surface::BltBatch(LPDDBLTBATCH lpDDBltBatch, DWORD dwCount, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::BltFast(DWORD dwX, DWORD dwY, LPDIRECTDRAWSURFACE3 lpDDSrcSurface, LPRECT lpSrcRect, DWORD dwTrans) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSrcSurface != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(lpDDSrcSurface))) {
       // Powerslide tries to blit here from a IDirectDrawSurface source
@@ -459,6 +466,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::DeleteAttachedSurface(DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSAttachedSurface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSAttachedSurface != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(lpDDSAttachedSurface))) {
       // Some games, like Nightmare Creatures, try to attach an IDirectDrawSurface depth stencil directly...
@@ -511,14 +519,17 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::EnumAttachedSurfaces(LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpEnumSurfacesCallback) {
+    D7VK_DEFERRED_SYNC();
     return m_parent->EnumAttachedSurfaces(lpContext, lpEnumSurfacesCallback);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::EnumOverlayZOrders(DWORD dwFlags, LPVOID lpContext, LPDDENUMSURFACESCALLBACK lpfnCallback) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->EnumOverlayZOrders(dwFlags, lpContext, lpfnCallback);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Flip(LPDIRECTDRAWSURFACE3 lpDDSurfaceTargetOverride, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSurfaceTargetOverride != nullptr
              && !DDrawCommonInterface::IsWrappedSurface(lpDDSurfaceTargetOverride))) {
       Logger::err("DDraw3Surface::Flip: Received an unwrapped override surface");
@@ -587,6 +598,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetAttachedSurface(LPDDSCAPS lpDDSCaps, LPDIRECTDRAWSURFACE3 *lplpDDAttachedSurface) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSCaps == nullptr || lplpDDAttachedSurface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -626,6 +638,7 @@ namespace dxvk {
 
   // Blitting can be done at any time and completes within its call frame
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetBltStatus(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (likely(dwFlags == DDGBS_CANBLT || dwFlags == DDGBS_ISBLTDONE))
       return DD_OK;
 
@@ -633,6 +646,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetCaps(LPDDSCAPS lpDDSCaps) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSCaps == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -642,6 +656,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetClipper(LPDIRECTDRAWCLIPPER *lplpDDClipper) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDDClipper == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -658,10 +673,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetColorKey(dwFlags, lpDDColorKey);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetDC(HDC *lphDC) {
+    D7VK_DEFERRED_SYNC();
     // Direct D3D9 path which can sometimes be faster (and other times slower)
     if (unlikely(m_commonIntf->GetOptions()->forceDCForwarding && m_commonSurf->IsInitialized())) {
       InitializeOrUploadD3D9();
@@ -681,6 +698,7 @@ namespace dxvk {
 
   // Flipping can be done at any time and completes within its call frame
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetFlipStatus(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     if (likely(dwFlags == DDGFS_CANFLIP || dwFlags == DDGFS_ISFLIPDONE))
       return DD_OK;
 
@@ -688,10 +706,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetOverlayPosition(LPLONG lplX, LPLONG lplY) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->GetOverlayPosition(lplX, lplY);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetPalette(LPDIRECTDRAWPALETTE *lplpDDPalette) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDDPalette == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -708,6 +728,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetPixelFormat(LPDDPIXELFORMAT lpDDPixelFormat) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDPixelFormat == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -717,6 +738,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetSurfaceDesc(LPDDSURFACEDESC lpDDSurfaceDesc) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSurfaceDesc == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -731,14 +753,17 @@ namespace dxvk {
   // According to the docs: "Because the DirectDrawSurface object is initialized
   // when it's created, this method always returns DDERR_ALREADYINITIALIZED."
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Initialize(LPDIRECTDRAW lpDD, LPDDSURFACEDESC lpDDSurfaceDesc) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::IsLost() {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->IsLost();
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Lock(LPRECT lpDestRect, LPDDSURFACEDESC lpDDSurfaceDesc, DWORD dwFlags, HANDLE hEvent) {
+    D7VK_DEFERRED_SYNC();
     // Write back any dirty surface data from bound D3D9 back buffers or depth stencils
     DownloadSurfaceData();
 
@@ -763,6 +788,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::ReleaseDC(HDC hDC) {
+    D7VK_DEFERRED_SYNC();
     // Direct D3D9 path which can sometimes be faster (and other times slower)
     if (unlikely(m_commonIntf->GetOptions()->forceDCForwarding && m_commonSurf->IsInitialized())) {
       HRESULT hr = m_commonSurf->GetD3D9Surface()->ReleaseDC(hDC);
@@ -798,10 +824,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Restore() {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->Restore();
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::SetClipper(LPDIRECTDRAWCLIPPER lpDDClipper) {
+    D7VK_DEFERRED_SYNC();
     // A nullptr lpDDClipper gets the current clipper detached
     if (lpDDClipper == nullptr) {
       HRESULT hr = m_proxy->SetClipper(lpDDClipper);
@@ -831,6 +859,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::SetColorKey(DWORD dwFlags, LPDDCOLORKEY lpDDColorKey) {
+    D7VK_DEFERRED_SYNC();
     // The Combat Mission series of games set a color key which is
     // outside the color range of the surface they are setting it on...
     // clamp it to the surface color depth in that case. This doesn't
@@ -866,10 +895,12 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::SetOverlayPosition(LONG lX, LONG lY) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->SetOverlayPosition(lX, lY);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::SetPalette(LPDIRECTDRAWPALETTE lpDDPalette) {
+    D7VK_DEFERRED_SYNC();
     // A nullptr lpDDPalette gets the current palette detached
     if (lpDDPalette == nullptr) {
       HRESULT hr = GetShadowOrProxied()->SetPalette(lpDDPalette);
@@ -894,6 +925,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::Unlock(LPVOID lpSurfaceData) {
+    D7VK_DEFERRED_SYNC();
     HRESULT hr = GetShadowOrProxied()->Unlock(lpSurfaceData);
     if (unlikely(FAILED(hr)))
       return hr;
@@ -922,6 +954,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::UpdateOverlay(LPRECT lpSrcRect, LPDIRECTDRAWSURFACE3 lpDDDestSurface, LPRECT lpDestRect, DWORD dwFlags, LPDDOVERLAYFX lpDDOverlayFx) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDDestSurface == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -936,10 +969,12 @@ namespace dxvk {
 
   // Docs: "This method is for software emulation only; it does nothing if the hardware supports overlays."
   HRESULT STDMETHODCALLTYPE DDraw3Surface::UpdateOverlayDisplay(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::UpdateOverlayZOrder(DWORD dwFlags, LPDIRECTDRAWSURFACE3 lpDDSReference) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lpDDSReference != nullptr
               && !DDrawCommonInterface::IsWrappedSurface(lpDDSReference))) {
       Logger::err("DDraw3Surface::UpdateOverlayZOrder: Received an unwrapped surface");
@@ -955,6 +990,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::GetDDInterface(LPVOID *lplpDD) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(lplpDD == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -971,14 +1007,17 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::PageLock(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->PageLock(dwFlags);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::PageUnlock(DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     return m_proxy->PageUnlock(dwFlags);
   }
 
   HRESULT STDMETHODCALLTYPE DDraw3Surface::SetSurfaceDesc(LPDDSURFACEDESC lpDDSD, DWORD dwFlags) {
+    D7VK_DEFERRED_SYNC();
     // Can be used only to set the surface data and pixel format
     // used by an explicit system-memory surface (will be validated)
     HRESULT hr = m_proxy->SetSurfaceDesc(lpDDSD, dwFlags);

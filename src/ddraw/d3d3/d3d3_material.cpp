@@ -1,3 +1,4 @@
+#include "../ddraw_deferred.h"
 #include "d3d3_material.h"
 
 #include "d3d3_interface.h"
@@ -26,6 +27,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Material::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(ppvObject == nullptr))
       return E_POINTER;
 
@@ -45,10 +47,12 @@ namespace dxvk {
   // Docs state: "Returns DDERR_ALREADYINITIALIZED because the
   // Direct3DMaterial object is initialized when it is created."
   HRESULT STDMETHODCALLTYPE D3D3Material::Initialize(LPDIRECT3D lpDirect3D) {
+    D7VK_DEFERRED_SYNC();
     return DDERR_ALREADYINITIALIZED;
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Material::SetMaterial(D3DMATERIAL* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -61,6 +65,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Material::GetMaterial(D3DMATERIAL* data) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(data == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -68,6 +73,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3D3Material::GetHandle(IDirect3DDevice* device, D3DMATERIALHANDLE* handle) {
+    D7VK_DEFERRED_SYNC();
     if (unlikely(device == nullptr || handle == nullptr))
       return DDERR_INVALIDPARAMS;
 
@@ -76,11 +82,13 @@ namespace dxvk {
 
   // Docs state: "Not currently implemented."
   HRESULT STDMETHODCALLTYPE D3D3Material::Reserve() {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 
   // Docs state: "Not currently implemented."
   HRESULT STDMETHODCALLTYPE D3D3Material::Unreserve() {
+    D7VK_DEFERRED_SYNC();
     return DDERR_UNSUPPORTED;
   }
 

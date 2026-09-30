@@ -1,3 +1,4 @@
+#include "ddraw_deferred.h"
 #include "d3d_common_device.h"
 
 #include "ddraw_common_surface.h"
@@ -39,6 +40,7 @@ namespace dxvk {
   }
 
   HRESULT STDMETHODCALLTYPE D3DCommonDevice::QueryInterface(REFIID riid, void** ppvObject) {
+    D7VK_DEFERRED_SYNC();
     *ppvObject = ref(this);
     return S_OK;
   }
